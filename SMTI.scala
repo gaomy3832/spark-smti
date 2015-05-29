@@ -2,6 +2,8 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 
+import org.apache.spark.rdd._
+
 import scala.io.Source
 import java.io.File
 
@@ -25,9 +27,13 @@ object SMTI {
     val prefListDir = args(0)
 
     val config = loadConfig(prefListDir)
+    val men = loadRawPrefList(sc, prefListDir, "men.list")
+    val women = loadRawPrefList(sc, prefListDir, "women.list")
 
-    println(config(0))
-
+    println("Men's list:")
+    printRawPrefList(men, 10)
+    println("Women's list:")
+    printRawPrefList(women, 10)
 
 
     // Clean up
@@ -46,4 +52,20 @@ object SMTI {
    * same preference as the one before it.
    */
   type RawPrefList = Array[Long]
+
+  def loadRawPrefList(sc: SparkContext, dir: String, file: String): RDD[(Long, RawPrefList)] = {
+    sc.textFile(new File(dir, file).toString).map { line =>
+      val spLine = line.split(":")
+      assert(spLine.length == 2)
+      val index = spLine(0).toLong
+      val prefList: RawPrefList = spLine(1).trim().split(" ").map( x => x.toLong )
+      (index, prefList)
+    }
+  }
+
+  def printRawPrefList(kvPrefList: RDD[(Long, RawPrefList)], num: Int) = {
+    kvPrefList.take(num)
+      .map( item => item._1.toString + ":" + item._2.mkString(" ") )
+      .foreach( x => println(x) )
+  }
 }

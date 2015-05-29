@@ -34,10 +34,10 @@ object SMTI {
     sc.stop()
   }
 
-  def loadConfig(dir: String): Array[Int] = {
+  def loadConfig(dir: String): Array[Long] = {
     val lines = Source.fromFile(new File(dir, "config.txt")).getLines().toArray
     assert(lines.length == 1)
-    lines(0).split(" ").map( x => x.toInt )
+    lines(0).split(" ").map( x => x.toLong )
   }
 
   /* Raw preference list for one person.
@@ -45,5 +45,5 @@ object SMTI {
    * Ties are represented using negative indices, i.e., negative index has the
    * same preference as the one before it.
    */
-  type RawPrefList = List[Int]
+  type RawPrefList = Array[Long]
 }

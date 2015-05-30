@@ -1,5 +1,3 @@
-package edu.stanford.cme323.spark.smti
-
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
@@ -7,7 +5,7 @@ import org.apache.spark.SparkContext._
 import java.io.File
 import scala.io.Source
 
-import Input._
+import edu.stanford.cme323.spark.smti._
 
 
 object SMTITest {
@@ -28,8 +26,8 @@ object SMTITest {
 
     val config = loadConfig(prefListDir)
 
-    val menPrefLists = loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
-    val womenPrefLists = loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
+    val menPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
+    val womenPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
 
     val smtiSolver = new SMTI(menPrefLists, womenPrefLists)
     smtiSolver.printStatus(10)

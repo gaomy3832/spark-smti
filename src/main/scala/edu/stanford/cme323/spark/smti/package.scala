@@ -11,7 +11,4 @@ package object smti {
 
   /* Preference list for one person. */
   type PrefList = Array[Pref]
-
-  /* Status for one person. */
-  case class PersonStatus (val list: PrefList = Array.empty, var fiance: Index = InvIndex)
 }

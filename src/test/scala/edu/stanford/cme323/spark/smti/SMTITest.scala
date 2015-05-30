@@ -7,6 +7,9 @@ import org.apache.spark.SparkContext._
 import java.io.File
 import scala.io.Source
 
+import Input._
+
+
 object SMTITest {
 
   def main(args: Array[String]) {
@@ -25,7 +28,10 @@ object SMTITest {
 
     val config = loadConfig(prefListDir)
 
-    val smtiSolver = new SMTI(sc, config(0), prefListDir, "men.list", "women.list")
+    val menPrefLists = loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
+    val womenPrefLists = loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
+
+    val smtiSolver = new SMTI(menPrefLists, womenPrefLists)
     smtiSolver.printStatus(10)
 
     // Clean up

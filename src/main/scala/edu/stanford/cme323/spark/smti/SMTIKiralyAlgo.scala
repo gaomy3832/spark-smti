@@ -33,8 +33,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
             person.status.listPos < 2 * person.prefList.size && person.fiance == InvIndex }
           .map{ case(selfIndex, person) =>
             val listPos = person.status.listPos % person.prefList.size
-            val favoriteIndex = person.prefList.at(listPos).index
-            val uncertain = person.status.uncertain
+            val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
             (favoriteIndex, (selfIndex, uncertain))
           }
           .groupByKey()

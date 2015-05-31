@@ -39,7 +39,7 @@ object Input {
         rankList(i) = rank
       }
 
-      val prefList = (rankList zip rawPrefList).map( tuple => Pref(tuple._1, tuple._2.abs) )
+      val prefList = new PrefList((rankList zip rawPrefList).map( tuple => Pref(tuple._1, tuple._2.abs) ))
 
       (index, prefList)
     }

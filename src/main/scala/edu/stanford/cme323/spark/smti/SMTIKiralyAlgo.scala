@@ -30,10 +30,10 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
       val proposals: RDD[(Index, Iterable[(Index, Boolean)])] =
         proposers
           .filter{ case(selfIndex, person) =>
-            person.status.listPos < 2 * person.prefList.length && person.fiance == InvIndex }
+            person.status.listPos < 2 * person.prefList.size && person.fiance == InvIndex }
           .map{ case(selfIndex, person) =>
-            val listPos = person.status.listPos % person.prefList.length
-            val favoriteIndex = person.prefList(listPos).index
+            val listPos = person.status.listPos % person.prefList.size
+            val favoriteIndex = person.prefList.at(listPos).index
             val uncertain = person.status.uncertain
             (favoriteIndex, (selfIndex, uncertain))
           }
@@ -54,7 +54,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
         acceptors
           .join(proposals)
           .mapValues{ case(person, propGroup) =>
-            val bestProp = propGroup.maxBy( prop => getRank(prop._1, person.prefList) )
+            val bestProp = propGroup.maxBy( prop => person.prefList.getRankOf(prop._1) )
             (person, bestProp)
           }
           .filter{ kv =>
@@ -62,7 +62,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
             val bestProp = kv._2._2
             person.fiance == InvIndex ||
             person.status.flighty ||
-            getRank(bestProp._1, person.prefList) < getRank(person.fiance, person.prefList)
+            person.prefList.getRankOf(bestProp._1) < person.prefList.getRankOf(person.fiance)
           }
           .mapValues{ case(person, bestProp) =>
             Array(bestProp._1, person.fiance)

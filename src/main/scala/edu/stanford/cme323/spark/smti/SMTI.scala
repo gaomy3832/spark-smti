@@ -33,12 +33,16 @@ abstract class SMTI[PropStatus, AccpStatus] (
     // check whether fiance in prefList, or single
     val propFianceInvalid =
       res.join(proposers.mapValues( person => person.prefList ))
-        .mapValues( pair => pair._1 != InvIndex && !pair._2.contains(pair._1) )
+        .mapValues{ case(fiance, prefList) =>
+          fiance != InvIndex && !prefList.contains(fiance)
+        }
         .filter( kv => kv._2 ).count()
     val accpFianceInvalid =
       res.map( kv => (kv._2, kv._1) )
         .join(acceptors.mapValues( person => person.prefList ))
-        .mapValues( pair => pair._1 != InvIndex && !pair._2.contains(pair._1) )
+        .mapValues{ case(fiance, prefList) =>
+          fiance != InvIndex && !prefList.contains(fiance)
+        }
         .filter( kv => kv._2 ).count()
     propFianceInvalid == 0 && accpFianceInvalid == 0
   }

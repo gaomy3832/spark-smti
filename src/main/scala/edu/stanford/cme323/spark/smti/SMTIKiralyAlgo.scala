@@ -27,14 +27,16 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
 
       // Proposers make proposal to the top person in the list
       // Proposals are grouped by acceptors
-      val proposals: RDD[(Index, Iterable[(Index, Boolean)])] =
+      case class Proposal(val propIdx: Index, val uncertain: Boolean)
+
+      val proposals: RDD[(Index, Iterable[Proposal])] =
         proposers
           .filter{ case(selfIndex, person) =>
             person.status.listPos < 2 * person.prefList.size && person.fiance == InvIndex }
           .map{ case(selfIndex, person) =>
             val listPos = person.status.listPos % person.prefList.size
             val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
-            (favoriteIndex, (selfIndex, uncertain))
+            (favoriteIndex, Proposal(selfIndex, uncertain))
           }
           .groupByKey()
 
@@ -47,13 +49,14 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
         }
 
       // Acceptors deal with proposals and make acceptance (and rejection to previous fiance)
-      // Answer is an array of length 2, first is new fiance, last is old fiance
       // Answers are grouped by acceptors
-      val answers: RDD[(Index, Array[Index])] =
+      case class Answer(val newFianceIdx: Index, val oldFianceIdx: Index)
+
+      val answers: RDD[(Index, Answer)] =
         acceptors
           .join(proposals)
           .mapValues{ case(person, propGroup) =>
-            val bestProp = propGroup.maxBy( prop => person.prefList.getRankOf(prop._1) )
+            val bestProp = propGroup.maxBy( prop => person.prefList.getRankOf(prop.propIdx) )
             (person, bestProp)
           }
           .filter{ kv =>
@@ -61,10 +64,10 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
             val bestProp = kv._2._2
             person.fiance == InvIndex ||
             person.status.flighty ||
-            person.prefList.getRankOf(bestProp._1) < person.prefList.getRankOf(person.fiance)
+            person.prefList.getRankOf(bestProp.propIdx) < person.prefList.getRankOf(person.fiance)
           }
           .mapValues{ case(person, bestProp) =>
-            Array(bestProp._1, person.fiance)
+            Answer(bestProp.propIdx, person.fiance)
           }
 
       //answers.mapValues( array => array.mkString(" ") ).take(10).foreach(println)
@@ -76,7 +79,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
             person
           } else {
             // TODO: update flighty status here
-            new Person(person.prefList, answer.get.head, person.status)
+            new Person(person.prefList, answer.get.newFianceIdx, person.status)
           }
         }
 

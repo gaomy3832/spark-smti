@@ -52,7 +52,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
               person
             } else {
               // select the best proposal
-              val bestProp = propGroup.get.maxBy( prop => person.prefList.getRankOf(prop.propIdx) )
+              val bestProp = propGroup.get.minBy( prop => person.prefList.getRankOf(prop.propIdx) )
               if (person.fiance == InvIndex || person.status.flighty ||
                 person.prefList.getRankOf(bestProp.propIdx) < person.prefList.getRankOf(person.fiance)) {
                 // accept

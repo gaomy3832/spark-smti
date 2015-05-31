@@ -30,21 +30,38 @@ abstract class SMTI[PropStatus, AccpStatus] (
 
   def verify(): Boolean = {
     val res = results()
+
     // check whether fiance in prefList, or single
     val propFianceInvalid =
       res.join(proposers.mapValues( person => person.prefList ))
         .mapValues{ case(fiance, prefList) =>
           fiance != InvIndex && !prefList.contains(fiance)
         }
-        .filter( kv => kv._2 ).count()
+        .filter( kv => kv._2 )
+        .count()
     val accpFianceInvalid =
       res.map( kv => (kv._2, kv._1) )
         .join(acceptors.mapValues( person => person.prefList ))
         .mapValues{ case(fiance, prefList) =>
           fiance != InvIndex && !prefList.contains(fiance)
         }
-        .filter( kv => kv._2 ).count()
-    propFianceInvalid == 0 && accpFianceInvalid == 0
+        .filter( kv => kv._2 )
+        .count()
+
+    // check the relationship info in two sides matches
+    val validPropRelations = res
+      .filter( kv => kv._2 != InvIndex )
+    val validAccpRelations = acceptors.mapValues( person => person.fiance )
+      .filter( kv => kv._2 != InvIndex )
+    val mismatches = validPropRelations
+      .fullOuterJoin(validAccpRelations.map( kv => (kv._2, kv._1) ))
+      .mapValues{ case(option1, option2) =>
+        option1.isEmpty || option2.isEmpty || option1.get != option2.get
+      }
+      .filter( kv => kv._2 )
+      .count()
+
+    propFianceInvalid == 0 && accpFianceInvalid == 0 && mismatches == 0
   }
 
   def sizeOfMarriage(): Long = {

@@ -2,6 +2,9 @@ import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
+
 import java.io.File
 import scala.io.Source
 
@@ -11,6 +14,9 @@ import edu.stanford.cme323.spark.smti._
 object SMTITest {
 
   def main(args: Array[String]) {
+
+    Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
+    Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
 
     if (args.length != 1) {
       println("Usage: /path/to/spark/bin/spark-submit "

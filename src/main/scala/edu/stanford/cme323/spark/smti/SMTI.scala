@@ -1,32 +1,51 @@
 package edu.stanford.cme323.spark.smti
 
+import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 
-/* Status for one person. */
-private case class PersonStatus (val list: PrefList = Array.empty, var fiance: Index = InvIndex)
+private[smti] class Person[Status] (
+  val prefList: PrefList,
+  val fiance: Index,
+  val status: Status
+) extends Serializable
 
-class SMTI (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)]) {
+abstract class SMTI[PropStatus, AccpStatus] (
+    propPrefList: RDD[(Index, PrefList)],
+    accpPrefList: RDD[(Index, PrefList)],
+    initPropSt: PropStatus,
+    initAccpSt: AccpStatus)
+  extends Serializable {
 
-  private var proposers: RDD[(Index, PersonStatus)] = propPrefList.map( kv => (kv._1, PersonStatus(kv._2)) )
-  private var acceptors: RDD[(Index, PersonStatus)] = accpPrefList.map( kv => (kv._1, PersonStatus(kv._2)) )
+  protected var proposers: RDD[(Index, Person[PropStatus])] =
+    propPrefList.mapValues( prefList => new Person(prefList, InvIndex, initPropSt) )
+  protected var acceptors: RDD[(Index, Person[AccpStatus])] =
+    accpPrefList.mapValues( prefList => new Person(prefList, InvIndex, initAccpSt) )
 
+  def run()
 
-
-  /**
-   * Print for debug.
-   */
-  def printStatus(num: Int) = {
-    println("Proposers:")
-    printPersonStatus(proposers, num)
-    println("Acceptors:")
-    printPersonStatus(acceptors, num)
+  def results(): RDD[(Index, Index)] = {
+    proposers.mapValues( person => person.fiance )
   }
 
-  private def printPersonStatus(status: RDD[(Index, PersonStatus)], num: Int) = {
-    status.take(num)
-      .map( item => item._1.toString + ": " + item._2.fiance + ", " + item._2.list.mkString(" ") )
-      .foreach(println)
+  def verify(): Boolean = {
+    val res = results()
+    // check whether fiance in prefList, or single
+    val propFianceInvalid =
+      res.join(proposers.mapValues( person => person.prefList ))
+        .mapValues( pair => pair._1 != InvIndex && !pair._2.contains(pair._1) )
+        .filter( kv => kv._2 ).count()
+    val accpFianceInvalid =
+      res.map( kv => (kv._2, kv._1) )
+        .join(acceptors.mapValues( person => person.prefList ))
+        .mapValues( pair => pair._1 != InvIndex && !pair._2.contains(pair._1) )
+        .filter( kv => kv._2 ).count()
+    propFianceInvalid == 0 && accpFianceInvalid == 0
   }
+
+  def sizeOfMarriage(): Long = {
+    results().filter( kv => kv._2 != InvIndex ).count()
+  }
+
 }
 

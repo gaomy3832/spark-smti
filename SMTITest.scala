@@ -29,8 +29,12 @@ object SMTITest {
     val menPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
     val womenPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
 
-    val smtiSolver = new SMTI(menPrefLists, womenPrefLists)
-    smtiSolver.printStatus(10)
+    val smtiSolver = new SMTIKiralyAlgo(menPrefLists, womenPrefLists)
+
+    smtiSolver.results().take(10).foreach(println)
+    println(smtiSolver.verify())
+    println(smtiSolver.sizeOfMarriage())
+    smtiSolver.run()
 
     // Clean up
     sc.stop()

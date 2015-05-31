@@ -2,6 +2,7 @@ package edu.stanford.cme323.spark.smti
 
 import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
+import org.apache.spark.Logging
 
 
 private[smti] class Person[Status] (
@@ -15,7 +16,7 @@ abstract class SMTI[PropStatus, AccpStatus] (
     accpPrefList: RDD[(Index, PrefList)],
     initPropSt: PropStatus,
     initAccpSt: AccpStatus)
-  extends Serializable {
+  extends Serializable with Logging {
 
   protected var proposers: RDD[(Index, Person[PropStatus])] =
     propPrefList.mapValues( prefList => new Person(prefList, InvIndex, initPropSt) )

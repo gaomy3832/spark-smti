@@ -5,11 +5,8 @@ import org.apache.spark.rdd.RDD
 
 
 private[smti] case class PropStatus (
-  val uncertain: Boolean = false,
   val listPos: Int = 0
-) {
-  def updateList(offset: Int): PropStatus = new PropStatus(uncertain, listPos + offset)
-}
+)
 
 private[smti] case class AccpStatus (
   val flighty: Boolean = false
@@ -21,9 +18,10 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
 
   def run() {
 
-    var activeProposers = proposers.count()
+    var activeProposers: Long = proposers.count()
+    var round: Int = 0
 
-    //while () {
+    while (activeProposers > 0) {
 
       // Proposers make proposal to the top person in the list
       // Proposals are grouped by acceptors
@@ -41,73 +39,70 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
           .groupByKey()
 
       activeProposers = proposals.count()
+      println("Round " + round + ": Has " + activeProposers + " active proposers")
+      round += 1
 
-      // Remove the top person from the proposer lists
-      proposers = proposers
-        .mapValues{ person =>
-          new Person(person.prefList, person.fiance, person.status.updateList(1))
-        }
-
-      // Acceptors deal with proposals and make acceptance (and rejection to previous fiance)
-      // Answers are grouped by acceptors
-      case class Answer(val newFianceIdx: Index, val oldFianceIdx: Index)
-
-      val answers: RDD[(Index, Answer)] =
+      // Acceptors deal with proposals
+      acceptors =
         acceptors
-          .join(proposals)
+          .leftOuterJoin(proposals)
           .mapValues{ case(person, propGroup) =>
-            val bestProp = propGroup.maxBy( prop => person.prefList.getRankOf(prop.propIdx) )
-            (person, bestProp)
+            if (propGroup.isEmpty) {
+              // no proposal received
+              person
+            } else {
+              // select the best proposal
+              val bestProp = propGroup.get.maxBy( prop => person.prefList.getRankOf(prop.propIdx) )
+              if (person.fiance == InvIndex || person.status.flighty ||
+                person.prefList.getRankOf(bestProp.propIdx) < person.prefList.getRankOf(person.fiance)) {
+                // accept
+                new Person(person.prefList, bestProp.propIdx, AccpStatus(bestProp.uncertain))
+              } else {
+                person
+              }
+            }
           }
-          .filter{ kv =>
-            val person = kv._2._1
-            val bestProp = kv._2._2
-            person.fiance == InvIndex ||
-            person.status.flighty ||
-            person.prefList.getRankOf(bestProp.propIdx) < person.prefList.getRankOf(person.fiance)
+
+      // Acceptors respond with their current fiances
+      // Responses are grouped by proposers
+      case class Response(val accpIdx: Index)
+
+      val responses: RDD[(Index, Response)] =
+        acceptors
+          .map{ case(selfIndex, person) =>
+            (person.fiance, Response(selfIndex))
           }
-          .mapValues{ case(person, bestProp) =>
-            Answer(bestProp.propIdx, person.fiance)
+
+      // Proposers update themselves based on responses
+      proposers =
+        proposers
+          .leftOuterJoin(responses)
+          .mapValues{ case(person, resp) =>
+            if (resp.isEmpty) {
+              // no response
+              var listPos = person.status.listPos
+              if (person.fiance != InvIndex) {
+                // break up with previous fiance
+                // check if uncertain
+                val uncertain = person.prefList.getFavorite(person.status.listPos)._2
+                if (uncertain) listPos += 1
+              } else {
+                // proposing fails
+                listPos += 1
+              }
+              new Person(person.prefList, InvIndex, PropStatus(listPos))
+            } else {
+              if (person.fiance != InvIndex) {
+                // keep relationship
+                assert(person.fiance == resp.get.accpIdx)
+                person
+              } else {
+                // proposing succeeds
+                new Person(person.prefList, resp.get.accpIdx, PropStatus(person.status.listPos))
+              }
+            }
           }
-
-      //answers.mapValues( array => array.mkString(" ") ).take(10).foreach(println)
-
-      acceptors = acceptors
-        .leftOuterJoin(answers)
-        .mapValues{ case(person, answer) =>
-          if (answer.isEmpty) {
-            person
-          } else {
-            // TODO: update flighty status here
-            new Person(person.prefList, answer.get.newFianceIdx, person.status)
-          }
-        }
-
-      //val answersToProposers = answers
-        //.flatMap{ case(accpIndex, array) =>
-          //Array((array.head, accpIndex), (array))
-        //}
-
-      //proposers = proposers
-        //.leftOuterJoin(answers.flatMap( case(index, array) => array.map( ) ))
-
-
-    //}
-
-    proposers
-      .mapValues{ person =>
-        person.status.listPos
-      }
-      .take(10)
-      .foreach(println)
-
-    acceptors
-      .mapValues{ person =>
-        person.fiance
-      }
-      .take(10)
-      .foreach(println)
-
+    }
 
   }
 }

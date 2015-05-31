@@ -41,6 +41,8 @@ object SMTITest {
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())
     smtiSolver.run()
+    println(smtiSolver.verify())
+    println(smtiSolver.sizeOfMarriage())
 
     // Clean up
     sc.stop()

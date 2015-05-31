@@ -39,7 +39,7 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
           .groupByKey()
 
       activeProposers = proposals.count()
-      println("Round " + round + ": Has " + activeProposers + " active proposers")
+      logger.info("Round " + round + ": Has " + activeProposers + " active proposers")
       round += 1
 
       // Acceptors deal with proposals

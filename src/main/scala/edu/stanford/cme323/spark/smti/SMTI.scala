@@ -91,7 +91,7 @@ abstract class SMTI[PropStatus, AccpStatus] (
       numActiveProposals =
         proposals
           .map{ case(key, iter) => iter.size }
-          .reduce(_ + _)
+          .fold(0)(_ + _) // equv. to reduce(_ + _) but also handles empty RDD
       logInfo(f"Round $round%3d: Has $numActiveProposals%5d active proposers")
       round += 1
 

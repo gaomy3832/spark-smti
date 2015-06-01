@@ -4,6 +4,7 @@ package edu.stanford.cme323.spark.smti
 /* One preference: rank and index. */
 case class Pref (val rank: Rank = LastRank, val index: Index = InvIndex)
 
+
 /* Preference list for one person. */
 class PrefList (private val list: Array[Pref]) extends Serializable {
 

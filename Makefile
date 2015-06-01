@@ -4,7 +4,7 @@ ifndef SPARKPATH
     $(error Spark top path 'SPARTPATH' is not set)
 endif
 
-CLASS_NAME = SMTITest
+CLASS_NAME = Main
 PROJECT_NAME = smti
 JAR_FILE = $(wildcard target/scala-*/$(PROJECT_NAME)-assembly-*.jar)
 

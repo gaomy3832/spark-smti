@@ -1,11 +1,11 @@
 package edu.stanford.cme323.spark.smti
 
-import org.apache.spark.SparkContext._
-import org.apache.spark.rdd.RDD
-import org.apache.spark.Logging
-
 import java.io.File
+
 import scala.reflect.ClassTag
+
+import org.apache.spark.Logging
+import org.apache.spark.rdd.RDD
 
 
 private[smti] class Person[Status] (
@@ -14,7 +14,9 @@ private[smti] class Person[Status] (
   val status: Status
 ) extends Serializable
 
-abstract class SMTI[PropStatus, AccpStatus] (
+
+/* SMTI using GS Scheme base class. */
+abstract class SMTIGSBase[PropStatus, AccpStatus] (
     propPrefList: RDD[(Index, PrefList)],
     accpPrefList: RDD[(Index, PrefList)],
     initPropSt: PropStatus,
@@ -24,6 +26,10 @@ abstract class SMTI[PropStatus, AccpStatus] (
   protected type Proposer = Person[PropStatus]
   protected type Acceptor = Person[AccpStatus]
 
+
+  /**
+   * Data members.
+   */
   protected var proposers: RDD[(Index, Proposer)] =
     propPrefList.mapValues( prefList => new Proposer(prefList, InvIndex, initPropSt) )
   protected var acceptors: RDD[(Index, Acceptor)] =
@@ -35,6 +41,9 @@ abstract class SMTI[PropStatus, AccpStatus] (
   acceptors.sparkContext.setCheckpointDir(checkpointDir.toString)
 
 
+  /**
+   * Algorithm execution template.
+   */
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
        propActive: Proposer => Boolean,
@@ -55,9 +64,7 @@ abstract class SMTI[PropStatus, AccpStatus] (
       prevProposers = proposers
       prevAcceptors = acceptors
 
-      /**
-       * Proposers to acceptors.
-       */
+      /* Proposers to acceptors. */
       // Proposers make proposals
       // Proposals are grouped by acceptors
       val proposals: RDD[(Index, Iterable[Proposal])] =
@@ -74,9 +81,7 @@ abstract class SMTI[PropStatus, AccpStatus] (
           .mapValues( pair => accpHandleProposal(pair._1, pair._2) )
           .cache()
 
-      /**
-       * Acceptors to proposers.
-       */
+      /* Acceptors to proposers. */
       // Acceptors respond with their current fiances
       // Responses are grouped by proposers
       val responses: RDD[(Index, Response)] =
@@ -91,15 +96,13 @@ abstract class SMTI[PropStatus, AccpStatus] (
           .mapValues( pair => propHandleResponse(pair._1, pair._2) )
           .cache()
 
-      // Break the long RDD lineage to avoid stackoverflow error
+      /* Break the long RDD lineage to avoid stackoverflow error. */
       if (round % 30 == 0) {
         proposers.checkpoint()
         acceptors.checkpoint()
       }
 
-      /**
-       * Iteration metadata.
-       */
+      /* Iteration metadata. */
       numActiveProposals =
         proposals
           .map{ case(key, iter) => iter.size }
@@ -117,8 +120,15 @@ abstract class SMTI[PropStatus, AccpStatus] (
   }
 
 
+  /**
+   * Results and verification.
+   */
   def results(): RDD[(Index, Index)] = {
     proposers.mapValues( person => person.fiance )
+  }
+
+  def sizeOfMarriage(): Long = {
+    results().filter( kv => kv._2 != InvIndex ).count()
   }
 
   def verify(): Boolean = {
@@ -155,10 +165,6 @@ abstract class SMTI[PropStatus, AccpStatus] (
       .count()
 
     propFianceInvalid == 0 && accpFianceInvalid == 0 && mismatches == 0
-  }
-
-  def sizeOfMarriage(): Long = {
-    results().filter( kv => kv._2 != InvIndex ).count()
   }
 
 }

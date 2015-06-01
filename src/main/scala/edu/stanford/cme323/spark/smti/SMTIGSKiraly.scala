@@ -1,6 +1,5 @@
 package edu.stanford.cme323.spark.smti
 
-import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 
 
@@ -21,10 +20,10 @@ private[smti] case class Response(
   val from: Index
 )
 
-class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
-  extends SMTI[PropStatus, AccpStatus](propPrefList, accpPrefList,
-    new PropStatus(), new AccpStatus()) {
 
+class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
+  extends SMTIGSBase[PropStatus, AccpStatus](propPrefList, accpPrefList,
+    new PropStatus(), new AccpStatus()) {
 
   def run(maxRounds: Int = Int.MaxValue) {
 
@@ -80,9 +79,6 @@ class SMTIKiralyAlgo (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(I
           }
       }
     }
-
-
-    println("Num of partitions: " + proposers.partitions.length)
 
     doMatching(maxRounds,
       propActive,

@@ -1,13 +1,16 @@
-package edu.stanford.cme323.spark.smti
+package edu.stanford.cme323.spark.smti.utils
+
+import java.io.File
+
+import scala.io.Source
 
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
-import java.io.File
-import scala.io.Source
+import edu.stanford.cme323.spark.smti._
 
 
-object Input {
+object IO {
 
   /**
    * Modified Random generated SMTI instances (RGSI) format.

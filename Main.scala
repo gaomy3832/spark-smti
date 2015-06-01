@@ -1,18 +1,19 @@
+import java.io.File
+
+import scala.io.Source
+
+import org.apache.log4j.Logger
+import org.apache.log4j.Level
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
 import org.apache.spark.HashPartitioner
 
-import org.apache.log4j.Logger
-import org.apache.log4j.Level
-
-import java.io.File
-import scala.io.Source
-
 import edu.stanford.cme323.spark.smti._
+import edu.stanford.cme323.spark.smti.utils.IO
 
 
-object SMTITest {
+object Main {
 
   def main(args: Array[String]) {
 
@@ -35,12 +36,12 @@ object SMTITest {
 
     val config = loadConfig(prefListDir)
 
-    val menPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
+    val menPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
       .partitionBy(new HashPartitioner(numPartitions))
-    val womenPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
+    val womenPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
       .partitionBy(new HashPartitioner(numPartitions))
 
-    val smtiSolver = new SMTIKiralyAlgo(menPrefLists, womenPrefLists)
+    val smtiSolver = new SMTIGSKiraly(menPrefLists, womenPrefLists)
 
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())

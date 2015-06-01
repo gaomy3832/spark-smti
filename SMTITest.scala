@@ -1,6 +1,7 @@
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
+import org.apache.spark.HashPartitioner
 
 import org.apache.log4j.Logger
 import org.apache.log4j.Level
@@ -18,28 +19,38 @@ object SMTITest {
     Logger.getLogger("org.apache.spark").setLevel(Level.WARN)
     Logger.getLogger("org.eclipse.jetty.server").setLevel(Level.OFF)
 
-    if (args.length != 1) {
+    if (args.length != 2) {
       println("Usage: /path/to/spark/bin/spark-submit "
         + "--class edu.stanford.cme323.spark.smti.SMTITest "
-        + "target/scala-*/smti-assembly-*.jar " + "prefListDir")
+        + "target/scala-*/smti-assembly-*.jar "
+        + "numPartitions " + "prefListDir")
       sys.exit(1)
     }
+
+    val numPartitions = args(0).toInt
+    val prefListDir = args(1)
 
     val conf = new SparkConf().setAppName("SMTI")
     val sc = new SparkContext(conf)
 
-    val prefListDir = args(0)
-
     val config = loadConfig(prefListDir)
 
     val menPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
+      .partitionBy(new HashPartitioner(numPartitions))
     val womenPrefLists = Input.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
+      .partitionBy(new HashPartitioner(numPartitions))
 
     val smtiSolver = new SMTIKiralyAlgo(menPrefLists, womenPrefLists)
 
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())
-    smtiSolver.run(30)
+
+    val tStart = System.nanoTime()
+    smtiSolver.run(10)
+    val tEnd = System.nanoTime()
+
+    println("Elapsed time: " + (tEnd - tStart) / 1e6 + " ms")
+
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())
     smtiSolver.results().filter( pair => pair._2 != InvIndex ).take(10).foreach(println)

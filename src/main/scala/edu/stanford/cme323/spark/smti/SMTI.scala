@@ -29,7 +29,7 @@ abstract class SMTI[PropStatus, AccpStatus] (
     accpPrefList.mapValues( prefList => new Acceptor(prefList, InvIndex, initAccpSt) )
 
 
-  def run[Proposal: ClassTag, Response: ClassTag]
+  protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
        propActive: Proposer => Boolean,
        propMakeProposal: (Index, Proposer) => (Index, Proposal),

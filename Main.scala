@@ -44,7 +44,7 @@ object Main {
     val smtiSolver = new SMTIGSKiraly(menPrefLists, womenPrefLists)
 
     println(smtiSolver.verify())
-    println(smtiSolver.sizeOfMarriage())
+    println(smtiSolver.marriage().count())
 
     val tStart = System.nanoTime()
     smtiSolver.run()
@@ -53,8 +53,8 @@ object Main {
     println("Elapsed time: " + (tEnd - tStart) / 1e6 + " ms")
 
     println(smtiSolver.verify())
-    println(smtiSolver.sizeOfMarriage())
-    smtiSolver.results().filter( pair => pair._2 != InvIndex ).take(10).foreach(println)
+    println(smtiSolver.marriage().count())
+    smtiSolver.marriage().take(10).foreach(println)
 
     // Clean up
     sc.stop()

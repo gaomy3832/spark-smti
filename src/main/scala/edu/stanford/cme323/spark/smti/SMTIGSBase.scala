@@ -123,29 +123,32 @@ abstract class SMTIGSBase[PropStatus, AccpStatus] (
   /**
    * Results and verification.
    */
-  def results(): RDD[(Index, Index)] = {
+  def rawResults(): RDD[(Index, Index)] = {
     proposers.mapValues( person => person.fiance )
   }
 
-  def sizeOfMarriage(): Long = {
-    results().filter( kv => kv._2 != InvIndex ).count()
+  def marriage(): RDD[(Index, Index)] = {
+    rawResults().filter( pair => pair._2 != InvIndex )
   }
 
   def verify(): Boolean = {
-    val res = results()
+    val res = rawResults()
 
     // check whether fiance in prefList, or single
     val propFianceInvalid =
-      res.join(proposers.mapValues( person => person.prefList ))
-        .mapValues{ case(fiance, prefList) =>
+      proposers
+        .mapValues( person => person.prefList )
+        .join(res)
+        .mapValues{ case(prefList, fiance) =>
           fiance != InvIndex && !prefList.contains(fiance)
         }
         .filter( kv => kv._2 )
         .count()
     val accpFianceInvalid =
-      res.map( kv => (kv._2, kv._1) )
-        .join(acceptors.mapValues( person => person.prefList ))
-        .mapValues{ case(fiance, prefList) =>
+      acceptors
+        .mapValues( person => person.prefList )
+        .join(res.map( kv => (kv._2, kv._1) ))
+        .mapValues{ case(prefList, fiance) =>
           fiance != InvIndex && !prefList.contains(fiance)
         }
         .filter( kv => kv._2 )

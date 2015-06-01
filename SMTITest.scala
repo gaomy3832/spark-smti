@@ -37,12 +37,12 @@ object SMTITest {
 
     val smtiSolver = new SMTIKiralyAlgo(menPrefLists, womenPrefLists)
 
-    smtiSolver.results().take(10).foreach(println)
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())
-    smtiSolver.run()
+    smtiSolver.run(30)
     println(smtiSolver.verify())
     println(smtiSolver.sizeOfMarriage())
+    smtiSolver.results().filter( pair => pair._2 != InvIndex ).take(10).foreach(println)
 
     // Clean up
     sc.stop()

@@ -4,6 +4,8 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
+import scala.reflect._
+
 
 private[smti] class Person[Status] (
   val prefList: PrefList,
@@ -18,12 +20,90 @@ abstract class SMTI[PropStatus, AccpStatus] (
     initAccpSt: AccpStatus)
   extends Serializable with Logging {
 
-  protected var proposers: RDD[(Index, Person[PropStatus])] =
-    propPrefList.mapValues( prefList => new Person(prefList, InvIndex, initPropSt) )
-  protected var acceptors: RDD[(Index, Person[AccpStatus])] =
-    accpPrefList.mapValues( prefList => new Person(prefList, InvIndex, initAccpSt) )
+  protected type Proposer = Person[PropStatus]
+  protected type Acceptor = Person[AccpStatus]
 
-  def run()
+  protected var proposers: RDD[(Index, Proposer)] =
+    propPrefList.mapValues( prefList => new Proposer(prefList, InvIndex, initPropSt) )
+  protected var acceptors: RDD[(Index, Acceptor)] =
+    accpPrefList.mapValues( prefList => new Acceptor(prefList, InvIndex, initAccpSt) )
+
+
+  def run[Proposal: ClassTag, Response: ClassTag]
+      (maxRounds: Int,
+       propActive: Proposer => Boolean,
+       propMakeProposal: (Index, Proposer) => (Index, Proposal),
+       accpMakeResponse: (Index, Acceptor) => (Index, Response),
+       propHandleResponse: (Proposer, Option[Response]) => Proposer,
+       accpHandleProposal: (Acceptor, Option[Iterable[Proposal]]) => Acceptor)
+  {
+
+    var numActiveProposals: Long = 0
+    var round: Int = 0
+
+    var prevProposers: RDD[(Index, Proposer)] = null
+    var prevAcceptors: RDD[(Index, Acceptor)] = null
+
+    do {
+
+      prevProposers = proposers
+      prevAcceptors = acceptors
+
+      /**
+       * Proposers to acceptors.
+       */
+      // Proposers make proposals
+      // Proposals are grouped by acceptors
+      val proposals: RDD[(Index, Iterable[Proposal])] =
+        proposers
+          .filter( kv => propActive(kv._2) )
+          .map( kv => propMakeProposal(kv._1, kv._2) )
+          .groupByKey()
+          .cache()
+
+      // Acceptors handle proposals
+      acceptors =
+        acceptors
+          .leftOuterJoin(proposals)
+          .mapValues( pair => accpHandleProposal(pair._1, pair._2) )
+          .cache()
+
+      /**
+       * Acceptors to proposers.
+       */
+      // Acceptors respond with their current fiances
+      // Responses are grouped by proposers
+      val responses: RDD[(Index, Response)] =
+        acceptors
+          .map( kv => accpMakeResponse(kv._1, kv._2) )
+          .cache()
+
+      // Proposers update themselves based on responses
+      proposers =
+        proposers
+          .leftOuterJoin(responses)
+          .mapValues( pair => propHandleResponse(pair._1, pair._2) )
+          .cache()
+
+      /**
+       * Iteration metadata.
+       */
+      numActiveProposals =
+        proposals
+          .map{ case(key, iter) => iter.size }
+          .reduce(_ + _)
+      logInfo(f"Round $round%3d: Has $numActiveProposals%5d active proposers")
+      round += 1
+
+      prevProposers.unpersist(blocking=false)
+      prevAcceptors.unpersist(blocking=false)
+      proposals.unpersist(blocking=false)
+      responses.unpersist(blocking=false)
+
+    } while (numActiveProposals > 0 && round < maxRounds)
+
+  }
+
 
   def results(): RDD[(Index, Index)] = {
     proposers.mapValues( person => person.fiance )

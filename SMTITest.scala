@@ -46,7 +46,7 @@ object SMTITest {
     println(smtiSolver.sizeOfMarriage())
 
     val tStart = System.nanoTime()
-    smtiSolver.run(10)
+    smtiSolver.run()
     val tEnd = System.nanoTime()
 
     println("Elapsed time: " + (tEnd - tStart) / 1e6 + " ms")

@@ -4,7 +4,8 @@ import org.apache.spark.SparkContext._
 import org.apache.spark.rdd.RDD
 import org.apache.spark.Logging
 
-import scala.reflect._
+import java.io.File
+import scala.reflect.ClassTag
 
 
 private[smti] class Person[Status] (
@@ -27,6 +28,11 @@ abstract class SMTI[PropStatus, AccpStatus] (
     propPrefList.mapValues( prefList => new Proposer(prefList, InvIndex, initPropSt) )
   protected var acceptors: RDD[(Index, Acceptor)] =
     accpPrefList.mapValues( prefList => new Acceptor(prefList, InvIndex, initAccpSt) )
+
+  private val checkpointDir = File.createTempFile(".cp_dir", "")
+  checkpointDir.delete()
+  proposers.sparkContext.setCheckpointDir(checkpointDir.toString)
+  acceptors.sparkContext.setCheckpointDir(checkpointDir.toString)
 
 
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
@@ -84,6 +90,12 @@ abstract class SMTI[PropStatus, AccpStatus] (
           .leftOuterJoin(responses)
           .mapValues( pair => propHandleResponse(pair._1, pair._2) )
           .cache()
+
+      // Break the long RDD lineage to avoid stackoverflow error
+      if (round % 30 == 0) {
+        proposers.checkpoint()
+        acceptors.checkpoint()
+      }
 
       /**
        * Iteration metadata.

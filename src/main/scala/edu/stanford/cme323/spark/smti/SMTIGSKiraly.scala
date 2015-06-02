@@ -3,27 +3,27 @@ package edu.stanford.cme323.spark.smti
 import org.apache.spark.rdd.RDD
 
 
-private[smti] case class PropStatus (
+private[smti] case class KiralyProp (
   val listPos: Int = 0
 )
 
-private[smti] case class AccpStatus (
+private[smti] case class KiralyAccp (
   val flighty: Boolean = false
 )
 
-private[smti] case class Proposal(
+private case class Proposal(
   val from: Index,
   val uncertain: Boolean
 )
 
-private[smti] case class Response(
+private case class Response(
   val from: Index
 )
 
 
 class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
-  extends SMTIGS[PropStatus, AccpStatus](propPrefList, accpPrefList,
-    new PropStatus(), new AccpStatus()) {
+  extends SMTIGS[KiralyProp, KiralyAccp](propPrefList, accpPrefList,
+    new KiralyProp(), new KiralyAccp()) {
 
   def run(maxRounds: Int = Int.MaxValue) {
 
@@ -53,12 +53,12 @@ class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Ind
             // proposing fails
             listPos += 1
           }
-          new Person(person.prefList, InvIndex, PropStatus(listPos))
+          new Person(person.prefList, InvIndex, KiralyProp(listPos))
         } else {
           val resp = optn.get
           // keep relationship or proposing succeeds
           assert(person.fiance == resp.from || person.fiance == InvIndex)
-          new Person(person.prefList, resp.from, PropStatus(listPos))
+          new Person(person.prefList, resp.from, KiralyProp(listPos))
         }
     }
 
@@ -73,7 +73,7 @@ class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Ind
         if (person.fiance == InvIndex || person.status.flighty ||
           person.prefList.getRankOf(bestProp.from) < person.prefList.getRankOf(person.fiance)) {
             // accept
-            new Acceptor(person.prefList, bestProp.from, AccpStatus(bestProp.uncertain))
+            new Acceptor(person.prefList, bestProp.from, KiralyAccp(bestProp.uncertain))
           } else {
             person
           }

@@ -188,18 +188,14 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
     val accpMorePreferred =
       acceptors
         .flatMapValues{ person =>
-          if (person.fiance == InvIndex) {
-            List[Index]()
-          } else {
-            var pos: Int = 0
-            var morePreferred = List[Index]()
-            while (person.prefList.at(pos).index != person.fiance) {
-              morePreferred = person.prefList.at(pos).index :: morePreferred
-              pos += 1
-            }
-            assert(pos < person.prefList.size)
-            morePreferred
+          val curRank = person.prefList.getRankOf(person.fiance)
+          var pos = 0
+          var morePreferred = List[Index]()
+          while (pos < person.prefList.size && person.prefList.at(pos).rank < curRank) {
+            morePreferred = person.prefList.at(pos).index :: morePreferred
+            pos += 1
           }
+          morePreferred
         }
         .map( pair => (pair._2, pair._1) )
 

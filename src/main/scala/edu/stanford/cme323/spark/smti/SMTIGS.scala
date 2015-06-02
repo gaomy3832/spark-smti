@@ -16,7 +16,7 @@ private[smti] class Person[Status] (
 
 
 /* SMTI using GS Scheme base class. */
-abstract class SMTIGSBase[PropStatus, AccpStatus] (
+abstract class SMTIGS[PropStatus, AccpStatus] (
     propPrefList: RDD[(Index, PrefList)],
     accpPrefList: RDD[(Index, PrefList)],
     initPropSt: PropStatus,

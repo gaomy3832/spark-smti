@@ -22,7 +22,7 @@ private[smti] case class Response(
 
 
 class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
-  extends SMTIGSBase[PropStatus, AccpStatus](propPrefList, accpPrefList,
+  extends SMTIGS[PropStatus, AccpStatus](propPrefList, accpPrefList,
     new PropStatus(), new AccpStatus()) {
 
   def run(maxRounds: Int = Int.MaxValue) {

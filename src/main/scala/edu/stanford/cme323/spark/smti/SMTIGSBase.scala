@@ -132,6 +132,18 @@ abstract class SMTIGSBase[PropStatus, AccpStatus] (
   }
 
   def verify(): Boolean = {
+    if (!sanityCheck()) {
+      logError("sanity check fails!")
+      false
+    } else if (!stableCheck()) {
+      logError("stable check fails!")
+      false
+    } else {
+      true
+    }
+  }
+
+  def sanityCheck(): Boolean = {
     val res = rawResults()
 
     // check whether fiance in prefList, or single
@@ -168,6 +180,41 @@ abstract class SMTIGSBase[PropStatus, AccpStatus] (
       .count()
 
     propFianceInvalid == 0 && accpFianceInvalid == 0 && mismatches == 0
+  }
+
+  def stableCheck(): Boolean = {
+    // people who are more preferred by the acceptors than their fiances
+    // Grouped by proposers
+    val accpMorePreferred =
+      acceptors
+        .flatMapValues{ person =>
+          if (person.fiance == InvIndex) {
+            List[Index]()
+          } else {
+            var pos: Int = 0
+            var morePreferred = List[Index]()
+            while (person.prefList.at(pos).index != person.fiance) {
+              morePreferred = person.prefList.at(pos).index :: morePreferred
+              pos += 1
+            }
+            assert(pos < person.prefList.size)
+            morePreferred
+          }
+        }
+        .map( pair => (pair._2, pair._1) )
+
+    val blockPairs =
+      proposers
+        .join(accpMorePreferred)
+        .flatMapValues{ case(person, prop) =>
+          if (person.prefList.getRankOf(prop) < person.prefList.getRankOf(person.fiance)) {
+            List(prop)
+          } else {
+            List[Index]()
+          }
+        }
+
+    blockPairs.count() == 0
   }
 
 }

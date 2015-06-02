@@ -11,19 +11,19 @@ private[smti] case class KiralyAccp (
   val flighty: Boolean = false
 )
 
-private case class Proposal(
-  val from: Index,
-  val uncertain: Boolean
-)
-
-private case class Response(
-  val from: Index
-)
-
 
 class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
   extends SMTIGS[KiralyProp, KiralyAccp](propPrefList, accpPrefList,
     new KiralyProp(), new KiralyAccp()) {
+
+  private case class Proposal(
+    val from: Index,
+    val uncertain: Boolean
+  )
+
+  private case class Response(
+    val from: Index
+  )
 
   def run(maxRounds: Int = Int.MaxValue) {
 

@@ -51,9 +51,11 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       (maxRounds: Int,
        propActive: Proposer => Boolean,
        propMakeProposal: (Index, Proposer) => (Index, Proposal),
-       accpMakeResponse: (Index, Acceptor) => (Index, Response),
+       accpMakeResponse: (Index, Acceptor) => Iterable[(Index, Response)],
        propHandleResponse: (Proposer, Option[Response]) => Proposer,
-       accpHandleProposal: (Acceptor, Option[Iterable[Proposal]]) => Acceptor)
+       accpHandleProposal: (Acceptor, Option[Iterable[Proposal]]) => Acceptor,
+       initProposer: Proposer => Proposer = person => person,
+       initAcceptor: Acceptor => Acceptor = person => person)
   {
 
     var numActiveProposals: Long = 0
@@ -61,6 +63,9 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
 
     var prevProposers: RDD[(Index, Proposer)] = null
     var prevAcceptors: RDD[(Index, Acceptor)] = null
+
+    proposers = proposers.mapValues(initProposer(_))
+    acceptors = acceptors.mapValues(initAcceptor(_))
 
     do {
 
@@ -89,7 +94,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       // Responses are grouped by proposers
       val responses: RDD[(Index, Response)] =
         acceptors
-          .map( kv => accpMakeResponse(kv._1, kv._2) )
+          .flatMap( kv => accpMakeResponse(kv._1, kv._2) )
           .cache()
 
       // Proposers update themselves based on responses

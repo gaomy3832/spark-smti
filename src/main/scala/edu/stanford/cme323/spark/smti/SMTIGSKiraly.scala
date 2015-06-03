@@ -52,7 +52,7 @@ class SMTIGSKiraly (
     }
 
     def accpMakeResponse = (selfIdx: Index, person: Acceptor) => {
-      (person.fiance, Response(selfIdx))
+      List((person.fiance, Response(selfIdx)))
     }
 
     def propHandleResponse = (person: Proposer, optn: Option[Response]) => {

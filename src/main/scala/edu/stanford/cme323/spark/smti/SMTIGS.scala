@@ -40,6 +40,8 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
   proposers.sparkContext.setCheckpointDir(checkpointDir.toString)
   acceptors.sparkContext.setCheckpointDir(checkpointDir.toString)
 
+  private val checkpointPeriod = 20
+
 
   /**
    * Algorithm execution template.
@@ -97,7 +99,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
           .cache()
 
       /* Break the long RDD lineage to avoid stackoverflow error. */
-      if (round % 30 == 0) {
+      if (round % checkpointPeriod == 0) {
         proposers.checkpoint()
         acceptors.checkpoint()
       }

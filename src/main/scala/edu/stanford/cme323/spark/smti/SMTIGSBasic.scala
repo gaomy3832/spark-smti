@@ -25,21 +25,21 @@ class SMTIGSBasic (
 
   def run(maxRounds: Int = Int.MaxValue) {
 
-    def propActive = (person: Proposer) => {
-      person.status.listPos < person.prefList.length && person.fiance == InvIndex
-    }
-
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      val listPos = person.status.listPos % person.prefList.length
-      val favoriteIndex = person.prefList(listPos).index
-      (favoriteIndex, Proposal(selfIdx))
+      if (person.status.listPos < person.prefList.length && person.fiance == InvIndex) {
+        val listPos = person.status.listPos % person.prefList.length
+        val favoriteIndex = person.prefList(listPos).index
+        List((favoriteIndex, Proposal(selfIdx)))
+      } else {
+        List.empty
+      }
     }
 
     def accpMakeResponse = (selfIdx: Index, person: Acceptor) => {
       List((person.fiance, Response(selfIdx)))
     }
 
-    def propHandleResponse = (person: Proposer, optn: Option[Response]) => {
+    def propHandleResponse = (person: Proposer, optn: Option[Iterable[Response]]) => {
       var listPos = person.status.listPos
       if (optn.isEmpty) {
         // no response received
@@ -47,7 +47,9 @@ class SMTIGSBasic (
         listPos += 1
         new Person(person.prefList, InvIndex, BasicProp(listPos))
       } else {
-        val resp = optn.get
+        val iter = optn.get
+        assert(iter.size == 1)
+        val resp = iter.head
         // keep relationship or proposing succeeds
         assert(person.fiance == resp.from || person.fiance == InvIndex)
         new Person(person.prefList, resp.from, BasicProp(listPos))
@@ -73,7 +75,6 @@ class SMTIGSBasic (
     }
 
     doMatching(maxRounds,
-      propActive,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

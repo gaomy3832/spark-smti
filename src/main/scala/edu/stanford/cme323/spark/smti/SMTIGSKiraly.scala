@@ -41,21 +41,21 @@ class SMTIGSKiraly (
 
   def run(maxRounds: Int = Int.MaxValue) {
 
-    def propActive = (person: Proposer) => {
-      person.status.listPos < 2 * person.prefList.length && person.fiance == InvIndex
-    }
-
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      val listPos = person.status.listPos % person.prefList.length
-      val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
-      (favoriteIndex, Proposal(selfIdx, uncertain))
+      if (person.status.listPos < 2 * person.prefList.length && person.fiance == InvIndex) {
+        val listPos = person.status.listPos % person.prefList.length
+        val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
+        List((favoriteIndex, Proposal(selfIdx, uncertain)))
+      } else {
+        List.empty
+      }
     }
 
     def accpMakeResponse = (selfIdx: Index, person: Acceptor) => {
       List((person.fiance, Response(selfIdx)))
     }
 
-    def propHandleResponse = (person: Proposer, optn: Option[Response]) => {
+    def propHandleResponse = (person: Proposer, optn: Option[Iterable[Response]]) => {
       var listPos = person.status.listPos
       if (optn.isEmpty) {
         // no response received
@@ -69,7 +69,7 @@ class SMTIGSKiraly (
           }
           new Person(person.prefList, InvIndex, KiralyProp(listPos))
         } else {
-          val resp = optn.get
+          val resp = optn.get.head
           // keep relationship or proposing succeeds
           assert(person.fiance == resp.from || person.fiance == InvIndex)
           new Person(person.prefList, resp.from, KiralyProp(listPos))
@@ -95,7 +95,6 @@ class SMTIGSKiraly (
     }
 
     doMatching(maxRounds,
-      propActive,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

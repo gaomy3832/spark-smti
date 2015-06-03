@@ -49,10 +49,9 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
    */
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
-       propActive: Proposer => Boolean,
-       propMakeProposal: (Index, Proposer) => (Index, Proposal),
+       propMakeProposal: (Index, Proposer) => Iterable[(Index, Proposal)],
        accpMakeResponse: (Index, Acceptor) => Iterable[(Index, Response)],
-       propHandleResponse: (Proposer, Option[Response]) => Proposer,
+       propHandleResponse: (Proposer, Option[Iterable[Response]]) => Proposer,
        accpHandleProposal: (Acceptor, Option[Iterable[Proposal]]) => Acceptor,
        initProposer: Proposer => Proposer = person => person,
        initAcceptor: Acceptor => Acceptor = person => person)
@@ -77,8 +76,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       // Proposals are grouped by acceptors
       val proposals: RDD[(Index, Iterable[Proposal])] =
         proposers
-          .filter( kv => propActive(kv._2) )
-          .map( kv => propMakeProposal(kv._1, kv._2) )
+          .flatMap( kv => propMakeProposal(kv._1, kv._2) )
           .groupByKey()
           .cache()
 
@@ -92,9 +90,10 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       /* Acceptors to proposers. */
       // Acceptors respond with their current fiances
       // Responses are grouped by proposers
-      val responses: RDD[(Index, Response)] =
+      val responses: RDD[(Index, Iterable[Response])] =
         acceptors
           .flatMap( kv => accpMakeResponse(kv._1, kv._2) )
+          .groupByKey()
           .cache()
 
       // Proposers update themselves based on responses

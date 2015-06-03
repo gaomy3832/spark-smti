@@ -23,10 +23,14 @@ class SMTIGSBasic (
   private case class Proposal(val from: Index)
   private case class Response(val from: Index)
 
-  def run(maxRounds: Int = Int.MaxValue) {
+  override def isActive(person: Proposer): Boolean = {
+    person.status.listPos < person.prefList.length
+  }
+
+  override def run(maxRounds: Int = Int.MaxValue) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      if (person.status.listPos < person.prefList.length && person.fiance == InvIndex) {
+      if (isActive(person) && person.fiance == InvIndex) {
         val listPos = person.status.listPos % person.prefList.length
         val favoriteIndex = person.prefList(listPos).index
         List((favoriteIndex, Proposal(selfIdx)))

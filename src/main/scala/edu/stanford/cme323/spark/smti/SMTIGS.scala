@@ -47,6 +47,11 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
   /**
    * Algorithm execution template.
    */
+
+  protected def isActive(person: Proposer): Boolean
+
+  def run(maxRounds: Int)
+
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
        propMakeProposal: (Index, Proposer) => Iterable[(Index, Proposal)],
@@ -57,7 +62,8 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
        initAcceptor: Acceptor => Acceptor = person => person)
   {
 
-    var numActiveProposals: Long = 0
+    var numActiveSingleProposers: Long = 0
+    var numProposals: Long = 0
     var round: Int = 0
 
     var prevProposers: RDD[(Index, Proposer)] = null
@@ -110,11 +116,17 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       }
 
       /* Iteration metadata. */
-      numActiveProposals =
+      numProposals =
         proposals
           .map{ case(key, iter) => iter.size }
           .fold(0)(_ + _) // equv. to reduce(_ + _) but also handles empty RDD
-      logInfo(f"Round $round%3d: Has $numActiveProposals%5d active proposers")
+      numActiveSingleProposers =
+        proposers
+          .filter( kv => isActive(kv._2) && kv._2.fiance == InvIndex )
+          .count()
+      logInfo(f"Round $round%3d: " +
+        f"Has $numActiveSingleProposers%5d active single proposers, " +
+        f"$numProposals%5d proposals")
       round += 1
 
       prevProposers.unpersist(blocking=false)
@@ -122,7 +134,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       proposals.unpersist(blocking=false)
       responses.unpersist(blocking=false)
 
-    } while (numActiveProposals > 0 && round < maxRounds)
+    } while (numActiveSingleProposers > 0 && round < maxRounds)
 
   }
 

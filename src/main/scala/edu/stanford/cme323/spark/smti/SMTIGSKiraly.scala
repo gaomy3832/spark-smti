@@ -39,10 +39,14 @@ class SMTIGSKiraly (
     }
   }
 
-  def run(maxRounds: Int = Int.MaxValue) {
+  override isActive(person: Proposer): Boolean = {
+    person.status.listPos < 2 * person.prefList.length
+  }
+
+  override def run(maxRounds: Int = Int.MaxValue) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      if (person.status.listPos < 2 * person.prefList.length && person.fiance == InvIndex) {
+      if (isActive(person) && person.fiance == InvIndex) {
         val listPos = person.status.listPos % person.prefList.length
         val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
         List((favoriteIndex, Proposal(selfIdx, uncertain)))

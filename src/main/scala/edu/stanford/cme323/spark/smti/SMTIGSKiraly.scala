@@ -25,14 +25,24 @@ class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Ind
     val from: Index
   )
 
+  implicit class KiralyPrefListOps (list: PrefList) extends PrefListOps(list) {
+    def getFavorite(pos: Int): (Index, Boolean) = {
+      var nextRankPos = pos
+      val rank = list(pos).rank
+      while (nextRankPos < list.length && list(nextRankPos).rank == rank) nextRankPos += 1
+      // FIXME: random select
+      (list(pos).index, pos + 1 == nextRankPos)
+    }
+  }
+
   def run(maxRounds: Int = Int.MaxValue) {
 
     def propActive = (person: Proposer) => {
-      person.status.listPos < 2 * person.prefList.size && person.fiance == InvIndex
+      person.status.listPos < 2 * person.prefList.length && person.fiance == InvIndex
     }
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      val listPos = person.status.listPos % person.prefList.size
+      val listPos = person.status.listPos % person.prefList.length
       val (favoriteIndex, uncertain) = person.prefList.getFavorite(listPos)
       (favoriteIndex, Proposal(selfIdx, uncertain))
     }

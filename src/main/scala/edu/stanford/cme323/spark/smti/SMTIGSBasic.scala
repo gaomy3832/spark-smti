@@ -27,12 +27,12 @@ class SMTIGSBasic (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Inde
   def run(maxRounds: Int = Int.MaxValue) {
 
     def propActive = (person: Proposer) => {
-      person.status.listPos < person.prefList.size && person.fiance == InvIndex
+      person.status.listPos < person.prefList.length && person.fiance == InvIndex
     }
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
-      val listPos = person.status.listPos % person.prefList.size
-      val favoriteIndex = person.prefList.getFavorite(listPos)._1
+      val listPos = person.status.listPos % person.prefList.length
+      val favoriteIndex = person.prefList(listPos).index
       (favoriteIndex, Proposal(selfIdx))
     }
 

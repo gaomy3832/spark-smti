@@ -152,7 +152,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
         .mapValues( person => person.prefList )
         .join(res)
         .mapValues{ case(prefList, fiance) =>
-          fiance != InvIndex && !prefList.contains(fiance)
+          fiance != InvIndex && !prefList.containsIndex(fiance)
         }
         .filter( kv => kv._2 )
         .count()
@@ -161,7 +161,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
         .mapValues( person => person.prefList )
         .join(res.map( kv => (kv._2, kv._1) ))
         .mapValues{ case(prefList, fiance) =>
-          fiance != InvIndex && !prefList.contains(fiance)
+          fiance != InvIndex && !prefList.containsIndex(fiance)
         }
         .filter( kv => kv._2 )
         .count()
@@ -191,8 +191,8 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
           val curRank = person.prefList.getRankOf(person.fiance)
           var pos = 0
           var morePreferred = List[Index]()
-          while (pos < person.prefList.size && person.prefList.at(pos).rank < curRank) {
-            morePreferred = person.prefList.at(pos).index :: morePreferred
+          while (pos < person.prefList.length && person.prefList(pos).rank < curRank) {
+            morePreferred = person.prefList(pos).index :: morePreferred
             pos += 1
           }
           morePreferred

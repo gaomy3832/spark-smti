@@ -16,12 +16,16 @@ package object smti {
 
   /* Operations on preference list. */
   implicit class PrefListOps (protected val list: PrefList) {
+
+    // Check if _index_ is in the list
     def containsIndex(index: Index): Boolean = {
       list.map(_.index).contains(index)
     }
 
+    // Get the rank of _index_ in the list
     def getRankOf(index: Index): Rank = {
       list.find( pref => pref.index == index ).getOrElse(Pref()).rank
     }
+
   }
 }

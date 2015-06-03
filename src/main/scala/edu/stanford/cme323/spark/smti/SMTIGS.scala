@@ -21,7 +21,8 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
     accpPrefList: RDD[(Index, PrefList)],
     initPropSt: PropStatus,
     initAccpSt: AccpStatus)
-  extends Serializable with Logging {
+  extends Serializable with Logging
+{
 
   protected type Proposer = Person[PropStatus]
   protected type Acceptor = Person[AccpStatus]

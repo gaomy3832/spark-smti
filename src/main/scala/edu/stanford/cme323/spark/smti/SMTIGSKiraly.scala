@@ -12,9 +12,13 @@ private[smti] case class KiralyAccp (
 )
 
 
-class SMTIGSKiraly (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
-  extends SMTIGS[KiralyProp, KiralyAccp](propPrefList, accpPrefList,
-    new KiralyProp(), new KiralyAccp()) {
+class SMTIGSKiraly (
+    propPrefList: RDD[(Index, PrefList)],
+    accpPrefList: RDD[(Index, PrefList)])
+  extends SMTIGS[KiralyProp, KiralyAccp](
+    propPrefList, accpPrefList,
+    new KiralyProp(), new KiralyAccp())
+{
 
   private case class Proposal(
     val from: Index,

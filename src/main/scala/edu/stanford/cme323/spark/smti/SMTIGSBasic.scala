@@ -12,17 +12,16 @@ private[smti] case class BasicAccp (
 )
 
 
-class SMTIGSBasic (propPrefList: RDD[(Index, PrefList)], accpPrefList: RDD[(Index, PrefList)])
-  extends SMTIGS[BasicProp, BasicAccp](propPrefList, accpPrefList,
-    new BasicProp(), new BasicAccp()) {
+class SMTIGSBasic (
+    propPrefList: RDD[(Index, PrefList)],
+    accpPrefList: RDD[(Index, PrefList)])
+  extends SMTIGS[BasicProp, BasicAccp](
+    propPrefList, accpPrefList,
+    new BasicProp(), new BasicAccp())
+{
 
-  private case class Proposal(
-    val from: Index
-  )
-
-  private case class Response(
-    val from: Index
-  )
+  private case class Proposal(val from: Index)
+  private case class Response(val from: Index)
 
   def run(maxRounds: Int = Int.MaxValue) {
 

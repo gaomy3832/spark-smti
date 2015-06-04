@@ -9,9 +9,9 @@ import org.apache.spark.rdd.RDD
 //
 // Proposer can be inactive, single, uncertain engaged, and engaged.  When he
 // is inactive, he does not propose any more; when he is single, he proposes to
-// the next favorite acceptor; when he is uncertain engaged, he does not
-// propose until becoming not uncertain; when he is engaged, he keeps proposing
-// to his current fiance.  Acceptor chooses the best in received proposals, and
+// the next favorite acceptor; when he is uncertain engaged, he still proposes
+// to tell the fiancee until becoming not uncertain; when he is engaged, he
+// does not propose.  Acceptor chooses the best in received proposals, and
 // always replaces the current fiance.
 //
 // Proposer can also be in the 1st pass or 2nd pass for his preference list.
@@ -32,7 +32,10 @@ private[smti] case class KiralyProp (
   val singleAcceptors: List[Index] = List.empty
 )
 
-private[smti] case class KiralyAccp ()
+private[smti] case class KiralyAccp (
+  // Round of fiance
+  val fianceRound: Int = 0
+)
 
 
 class SMTIGSKiraly (
@@ -85,10 +88,10 @@ class SMTIGSKiraly (
         } else {
           if (person.status.singleAcceptors.contains(person.status.candidates(0))) {
             // uncertain engaged
-            List.empty
+            List((person.fiance, Proposal(selfIdx, round)))
           } else {
             // engaged
-            List((person.fiance, Proposal(selfIdx, round)))
+            List.empty
           }
         }
       } else {
@@ -151,9 +154,16 @@ class SMTIGSKiraly (
         // no proposal received
         person
       } else {
+        var propList = optn.get.toList
+        // if receiving proposal from current fiance, means he is uncertain and she is flighty
+        val flighty = propList.exists( prop => prop.from == person.fiance)
+        propList = propList.filter( prop => prop.from != person.fiance )
+        if (!flighty || propList.isEmpty) {
+          propList = Proposal(person.fiance, person.status.fianceRound) :: propList
+        }
         // select the best proposal
-        val bestProp = optn.get.minBy( prop => person.prefList.getRankOf(prop.from) - prop.round * 0.5 )
-        new Acceptor(person.prefList, bestProp.from, KiralyAccp())
+        val bestProp = propList.minBy( prop => person.prefList.getRankOf(prop.from) - prop.round * 0.5 )
+        new Acceptor(person.prefList, bestProp.from, KiralyAccp(bestProp.round))
       }
     }
 

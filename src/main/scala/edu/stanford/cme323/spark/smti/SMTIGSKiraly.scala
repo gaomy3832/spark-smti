@@ -122,13 +122,22 @@ class SMTIGSKiraly (
           // break up with previous fiance
           assert(candidates.contains(person.fiance))
           assert(!singleAcceptors.contains(person.fiance))
-          val notUncertain = candidates.intersect(singleAcceptors).isEmpty
+          // uncertain should be evaluated on singleAcceptors of the last
+          // iteration, as the acceptor use it to decide flighty
+          val notUncertain = person.status.singleAcceptors
+            .filter(_ != person.fiance).intersect(candidates).isEmpty
           if (notUncertain) {
             candidates = candidates.diff(List(person.fiance))
           }
         } else {
           // proposing fails
-          candidates = candidates.drop(1)
+          if (!person.status.singleAcceptors.contains(candidates(0))) {
+            // when multiple proposers propose to a single acceptor, the
+            // acceptor may need to enter and leave the flighty status in one
+            // iteration, but we do not know the information at that time.
+            // so if the acceptor was single in the last iteration, we keep her
+            candidates = candidates.drop(1)
+          }
         }
       } else {
         assert(engagedAcceptors.length == 1)

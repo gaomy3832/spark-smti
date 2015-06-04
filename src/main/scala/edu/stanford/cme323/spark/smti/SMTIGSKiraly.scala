@@ -44,7 +44,8 @@ class SMTIGSKiraly (
 {
 
   private case class Proposal(
-    val from: Index
+    val from: Index,
+    val round: Int
   )
 
   private case class Response(
@@ -75,17 +76,19 @@ class SMTIGSKiraly (
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
       if (isActive(person)) {
+        val round = (person.status.nextCandPos - 1) / person.prefList.length
+        assert(round == 0 || round == 1)
         assert(!person.status.candidates.isEmpty)
         if (person.fiance == InvIndex) {
           // single state
-          List((person.status.candidates(0), Proposal(selfIdx)))
+          List((person.status.candidates(0), Proposal(selfIdx, round)))
         } else {
           if (person.status.singleAcceptors.contains(person.status.candidates(0))) {
             // uncertain engaged
             List.empty
           } else {
             // engaged
-            List((person.fiance, Proposal(selfIdx)))
+            List((person.fiance, Proposal(selfIdx, round)))
           }
         }
       } else {
@@ -149,7 +152,7 @@ class SMTIGSKiraly (
         person
       } else {
         // select the best proposal
-        val bestProp = optn.get.minBy( prop => person.prefList.getRankOf(prop.from) )
+        val bestProp = optn.get.minBy( prop => person.prefList.getRankOf(prop.from) - prop.round * 0.5 )
         new Acceptor(person.prefList, bestProp.from, KiralyAccp())
       }
     }

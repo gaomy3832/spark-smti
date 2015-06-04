@@ -18,7 +18,7 @@ assembly:
 	$(SBTPATH)/sbt assembly
 
 run:
-	$(SPARKPATH)/bin/spark-submit --master local[$N] --class $(CLASS_NAME) $(JAR_FILE) $P $(ARGS)
+	$(SPARKPATH)/bin/spark-submit --master local[$N] --class $(CLASS_NAME) $(JAR_FILE) $(ARGS) $P
 
 
 .PHONY: clean

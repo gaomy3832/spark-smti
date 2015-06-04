@@ -9,7 +9,6 @@ import org.apache.log4j.Level
 import org.apache.spark.SparkConf
 import org.apache.spark.SparkContext
 import org.apache.spark.SparkContext._
-import org.apache.spark.HashPartitioner
 
 import edu.stanford.cme323.spark.smti._
 import edu.stanford.cme323.spark.smti.utils.IO
@@ -37,14 +36,12 @@ object Main {
     val sc = new SparkContext(conf)
 
     val menPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
-      .partitionBy(new HashPartitioner(numPartitions))
     val womenPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
-      .partitionBy(new HashPartitioner(numPartitions))
 
     val smtiSolver = new SMTIGSKiraly(menPrefLists, womenPrefLists)
 
     val tStart = System.nanoTime()
-    smtiSolver.run()
+    smtiSolver.run(numPartitions=numPartitions)
     val tEnd = System.nanoTime()
     println("Elapsed time: " + (tEnd - tStart) / 1e6 + " ms")
 

@@ -27,7 +27,7 @@ class SMTIGSBasic (
     person.status.listPos < person.prefList.length
   }
 
-  override def run(maxRounds: Int = Int.MaxValue) {
+  override def run(maxRounds: Int = Int.MaxValue, numPartitions: Int = 2) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
       if (isActive(person) && person.fiance == InvIndex) {
@@ -79,6 +79,7 @@ class SMTIGSBasic (
     }
 
     doMatching(maxRounds,
+      numPartitions,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

@@ -71,7 +71,7 @@ class SMTIGSKiraly (
     person.status.nextCandPos < 2 * person.prefList.length
   }
 
-  override def run(maxRounds: Int = Int.MaxValue) {
+  override def run(maxRounds: Int = Int.MaxValue, numPartitions: Int = 2) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
       if (isActive(person)) {
@@ -161,6 +161,7 @@ class SMTIGSKiraly (
     }
 
     doMatching(maxRounds,
+      numPartitions,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

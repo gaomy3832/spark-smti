@@ -4,6 +4,7 @@ import java.io.File
 
 import scala.reflect.ClassTag
 
+import org.apache.spark.HashPartitioner
 import org.apache.spark.Logging
 import org.apache.spark.rdd.RDD
 
@@ -50,10 +51,11 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
 
   protected def isActive(person: Proposer): Boolean
 
-  def run(maxRounds: Int)
+  def run(maxRounds: Int, numPartitions: Int)
 
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
+       numPartitions: Int,
        propMakeProposal: (Index, Proposer) => Iterable[(Index, Proposal)],
        accpMakeResponse: (Index, Acceptor) => Iterable[(Index, Response)],
        propHandleResponse: (Proposer, Option[Iterable[Response]]) => Proposer,
@@ -69,8 +71,10 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
     var prevProposers: RDD[(Index, Proposer)] = null
     var prevAcceptors: RDD[(Index, Acceptor)] = null
 
-    proposers = proposers.mapValues(initProposer(_))
-    acceptors = acceptors.mapValues(initAcceptor(_))
+    val partitioner = new HashPartitioner(numPartitions)
+
+    proposers = proposers.mapValues(initProposer(_)).partitionBy(partitioner)
+    acceptors = acceptors.mapValues(initAcceptor(_)).partitionBy(partitioner)
 
     do {
 
@@ -83,7 +87,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       val proposals: RDD[(Index, Iterable[Proposal])] =
         proposers
           .flatMap( kv => propMakeProposal(kv._1, kv._2) )
-          .groupByKey()
+          .groupByKey(partitioner)
           .cache()
 
       // Acceptors handle proposals
@@ -99,7 +103,7 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
       val responses: RDD[(Index, Iterable[Response])] =
         acceptors
           .flatMap( kv => accpMakeResponse(kv._1, kv._2) )
-          .groupByKey()
+          .groupByKey(partitioner)
           .cache()
 
       // Proposers update themselves based on responses

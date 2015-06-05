@@ -1,6 +1,7 @@
 package edu.stanford.cme323.spark.smti.utils
 
 import java.io.File
+import java.io.FileWriter
 
 import scala.io.Source
 
@@ -47,4 +48,31 @@ object IO {
       (index, prefList)
     }
   }
+
+  def storeModifiedRGSIPrefLists(sc: SparkContext, prefLists: RDD[(Index, PrefList)], dir: String, file: String) = {
+    val rawLists: RDD[(Index, Array[Index])] = prefLists
+      .mapValues{ prefList =>
+        var rawPrefList: Array[Index] = new Array[Index](prefList.length)
+        rawPrefList(0) = prefList(0).index
+        for ( i <- 1 until prefList.length) {
+          if (prefList(i).rank == prefList(i-1).rank) {
+            rawPrefList(i) = -prefList(i).index
+          } else {
+            rawPrefList(i) = prefList(i).index
+          }
+        }
+        rawPrefList
+      }
+
+    val content: Array[String] = rawLists
+      .map{ case(index, rawPrefList) =>
+        index.toString + ": " + rawPrefList.mkString(" ")
+      }
+      .collect()
+
+    val writer = new FileWriter(new File(dir, file).toString)
+    content.foreach(line => writer.write(line + "\n"))
+    writer.close()
+  }
+
 }

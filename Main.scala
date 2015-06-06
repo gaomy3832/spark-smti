@@ -38,10 +38,10 @@ object Main {
     val menPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "men.list")
     val womenPrefLists = IO.loadModifiedRGSIPrefLists(sc, prefListDir, "women.list")
 
-    val smtiSolver = new SMTIGSKiraly(menPrefLists, womenPrefLists)
+    val smtiSolver = new SMTIGSKiraly(menPrefLists, womenPrefLists, numPartitions)
 
     val tStart = System.nanoTime()
-    smtiSolver.run(numPartitions=numPartitions)
+    smtiSolver.run()
     val tEnd = System.nanoTime()
     println("Elapsed time: " + (tEnd - tStart) / 1e6 + " ms")
 

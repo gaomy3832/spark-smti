@@ -20,6 +20,7 @@ private[smti] class Person[Status] (
 abstract class SMTIGS[PropStatus, AccpStatus] (
     propPrefList: RDD[(Index, PrefList)],
     accpPrefList: RDD[(Index, PrefList)],
+    numPartitions: Int,
     initPropSt: PropStatus,
     initAccpSt: AccpStatus)
   extends Serializable with Logging
@@ -37,6 +38,8 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
   protected var acceptors: RDD[(Index, Acceptor)] =
     accpPrefList.mapValues( prefList => new Acceptor(prefList, InvIndex, initAccpSt) )
 
+  protected val partitioner: HashPartitioner = new HashPartitioner(numPartitions)
+
   private val checkpointDir = File.createTempFile(".cp_dir", "")
   checkpointDir.delete()
   proposers.sparkContext.setCheckpointDir(checkpointDir.toString)
@@ -51,11 +54,10 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
 
   protected def isActive(person: Proposer): Boolean
 
-  def run(maxRounds: Int, numPartitions: Int)
+  def run(maxRounds: Int)
 
   protected def doMatching[Proposal: ClassTag, Response: ClassTag]
       (maxRounds: Int,
-       numPartitions: Int,
        propMakeProposal: (Index, Proposer) => Iterable[(Index, Proposal)],
        accpMakeResponse: (Index, Acceptor) => Iterable[(Index, Response)],
        propHandleResponse: (Proposer, Option[Iterable[Response]]) => Proposer,
@@ -70,8 +72,6 @@ abstract class SMTIGS[PropStatus, AccpStatus] (
 
     var prevProposers: RDD[(Index, Proposer)] = null
     var prevAcceptors: RDD[(Index, Acceptor)] = null
-
-    val partitioner = new HashPartitioner(numPartitions)
 
     proposers = proposers.mapValues(initProposer(_)).partitionBy(partitioner)
     acceptors = acceptors.mapValues(initAcceptor(_)).partitionBy(partitioner)

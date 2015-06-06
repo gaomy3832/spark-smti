@@ -40,9 +40,11 @@ private[smti] case class KiralyAccp (
 
 class SMTIGSKiraly (
     propPrefList: RDD[(Index, PrefList)],
-    accpPrefList: RDD[(Index, PrefList)])
+    accpPrefList: RDD[(Index, PrefList)],
+    numPartitions: Int = 2)
   extends SMTIGS[KiralyProp, KiralyAccp](
     propPrefList, accpPrefList,
+    numPartitions,
     new KiralyProp(), new KiralyAccp())
 {
 
@@ -75,7 +77,7 @@ class SMTIGSKiraly (
     person.status.nextCandPos < 2 * person.prefList.length
   }
 
-  override def run(maxRounds: Int = Int.MaxValue, numPartitions: Int = 2) {
+  override def run(maxRounds: Int = Int.MaxValue) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
       if (isActive(person)) {
@@ -183,7 +185,6 @@ class SMTIGSKiraly (
     }
 
     doMatching(maxRounds,
-      numPartitions,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

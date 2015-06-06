@@ -14,9 +14,11 @@ private[smti] case class BasicAccp (
 
 class SMTIGSBasic (
     propPrefList: RDD[(Index, PrefList)],
-    accpPrefList: RDD[(Index, PrefList)])
+    accpPrefList: RDD[(Index, PrefList)],
+    numPartitions: Int = 2)
   extends SMTIGS[BasicProp, BasicAccp](
     propPrefList, accpPrefList,
+    numPartitions,
     new BasicProp(), new BasicAccp())
 {
 
@@ -27,7 +29,7 @@ class SMTIGSBasic (
     person.status.listPos < person.prefList.length
   }
 
-  override def run(maxRounds: Int = Int.MaxValue, numPartitions: Int = 2) {
+  override def run(maxRounds: Int = Int.MaxValue) {
 
     def propMakeProposal = (selfIdx: Index, person: Proposer) => {
       if (isActive(person) && person.fiance == InvIndex) {
@@ -79,7 +81,6 @@ class SMTIGSBasic (
     }
 
     doMatching(maxRounds,
-      numPartitions,
       propMakeProposal,
       accpMakeResponse,
       propHandleResponse,

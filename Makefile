@@ -23,3 +23,4 @@ run:
 clean:
 	rm -rf target
 	rm -rf project/target project/project
+	rm -rf sbt/*.jar

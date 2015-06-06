@@ -5,13 +5,14 @@ import java.io.FileWriter
 
 import scala.io.Source
 
+import org.apache.spark.Logging
 import org.apache.spark.SparkContext
 import org.apache.spark.rdd.RDD
 
 import edu.stanford.cme323.spark.smti._
 
 
-object IO {
+object IO extends Logging {
 
   /**
    * Modified Random generated SMTI instances (RGSI) format.
@@ -27,6 +28,8 @@ object IO {
    * same preference rank as the one before it.
    */
   def loadModifiedRGSIPrefLists(sc: SparkContext, dir: String, file: String): RDD[(Index, PrefList)] = {
+    logInfo(f"Load RGSI preference list from $dir/$file")
+
     sc.textFile(new File(dir, file).toString).map{ line =>
       val spLine = line.split(":")
       assert(spLine.length == 2)
@@ -50,6 +53,8 @@ object IO {
   }
 
   def storeModifiedRGSIPrefLists(sc: SparkContext, prefLists: RDD[(Index, PrefList)], dir: String, file: String) = {
+    logInfo(f"Store RGSI preference list to $dir/$file")
+
     val rawLists: RDD[(Index, Array[Index])] = prefLists
       .mapValues{ prefList =>
         var rawPrefList: Array[Index] = new Array[Index](prefList.length)

@@ -13,7 +13,7 @@ import edu.stanford.cme323.spark.smti._
 
 object DataGen extends Logging {
 
-  def generate(sc: SparkContext, n: Long, pi: Double, pt: Double, seed: Int):
+  def generate(sc: SparkContext, n: Long, pi: Double, pt: Double, seed: Long):
       (RDD[(Index, PrefList)], RDD[(Index, PrefList)]) =
   {
     var men: RDD[(Index, PrefList)] = null

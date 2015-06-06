@@ -20,6 +20,7 @@ Source File Structure
 - MainApp.scala: example usage main class
 - utilities/
     - transInputData.py: script to translate dataset at http://cri-hpc1.univ-paris1.fr/smti/
+- testdata/: a small test dataset with 100 men/women, pi = 0.8, pt = 0.2
 
 Quick Start
 -----------
@@ -34,7 +35,7 @@ Use random generated data:
 `make run ARGS="--size 1000 --pi 0.9 --pt 0.2"`
 
 Use translated dataset:
-`make run ARGS="--in <data dir>"`
+`make run ARGS="--in testdata"`
 
 Use default random generated data, and output marriage result:
 `make run ARGS="--out <out dir>"`
